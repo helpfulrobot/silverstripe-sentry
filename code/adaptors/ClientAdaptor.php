@@ -27,6 +27,11 @@ abstract class ClientAdaptor
      */
     protected $userData;
     
+     /**
+     * @return string
+     */
+    abstract public function level($level);
+    
     /**
      * 
      * @param mixed $opt
@@ -43,6 +48,10 @@ abstract class ClientAdaptor
         return $opts;
     }
     
+    /**
+     * 
+     * @param string $env
+     */
     public function setEnv($env)
     {
         $this->env = $env;
