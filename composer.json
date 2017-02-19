@@ -1,6 +1,7 @@
 {
     "name": "silverstripe/sentry",
     "type": "silverstripe-module",
+    "license": "BSD",
     "description": "Sentry.io integration for SilverStripe. Binds Sentry.io to SilverStripe's error & exception handling subsystem.",
     "keywords": ["silverstripe", "sentry", "logging", "logs", "log", "raven", "exception", "error"],
     "author": [

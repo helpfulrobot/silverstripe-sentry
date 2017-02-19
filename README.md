@@ -1,8 +1,9 @@
 # Sentry.io integration for SilverStripe
 
-This is a simple module that binds Sentry.io to the error & exception handler of SilverStripe.
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/phptek/silverstripe-sentry/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/phptek/silverstripe-sentry/?branch=master))
 
-It also allows for sending error and exception data to local Sentry installations.
+This is a simple module that binds Sentry.io to the error & exception handler of SilverStripe, thus allowing 
+error and exception data to be sent to remote and local Sentry installations.
 
 ## Requirements
 
@@ -14,7 +15,36 @@ Add the Composer package as a dependency to your project:
 
 	composer require silverstripe/sentry: 1.0
 
-Invoke the factory method:
+## Usage
+
+### Basic
 
     SS_Log::add_writer(SentryLogWriter::factory(), SS_Log::ERR, '<=');
+
+### Specify an environment
+
+    $config = [];
+    $config['env'] = custom_env_func();
+    SS_Log::add_writer(SentryLogWriter::factory($config), SS_Log::ERR, '<=');
+
+### Specify additional tags to filter on in Sentry UI
+
+    $config = [];
+    $config['env'] = custom_env_func();
+    $config['tags'] = [
+        'member-last-logged-in' => $member->getField('LastVisited')
+    ],
+    SS_Log::add_writer(SentryLogWriter::factory($config), SS_Log::ERR, '<=');
+
+### Specify additional arbitrary data to appear in Sentry UI
+
+    $config = [];
+    $config['env'] = custom_env_func();
+    $config['tags'] = [
+        'member-last-logged-in' => $member->getField('LastVisited')
+    ],
+    $config['extra'] = [
+        'foo-route-exists' = in_array('foo', Controller::curr()->getRequest()->routeParams()) ? 'Yes' : 'No'
+    ];
+    SS_Log::add_writer(SentryLogWriter::factory($config), SS_Log::ERR, '<=');
 

@@ -43,7 +43,7 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
         
         // Set all available user-data
         if ($member = Member::currentUser()) {
-            $this->client->setUserData($member->toMap());
+            $this->client->setUserData($this->user($member));
         }
         
         // Set any available tags available in SS config
@@ -63,7 +63,7 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
      * @param array $config
      * @return SentryLogWriter
      */
-	public static function factory($config)
+	public static function factory($config = [])
     {
         $env = isset($config['env']) ? $config['env'] : null;
         $tags = isset($config['tags']) ? $config['tags'] : null;
@@ -72,12 +72,28 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
 	}
     
     /**
-     * Sets-up a default set of additional tags we wish to send to Sentry.
+     * Returns a default set of additional data specific to the user's part in
+     * the request.
+     * 
+     * @param Member $member
+     * @return array
+     */
+    public function user(Member $member)
+    {
+        return [
+            'ip_address'    => $this->getIP(),
+            'id'            => $member->getField('ID'),
+            'email'         => $member->getField('Email'),
+            'os'            => $this->getOS(),
+            'user_agent'    => $this->getUserAgent()
+        ];
+    }
+    
+    /**
+     * Returns a default set of additional tags we wish to send to Sentry.
      * By default, Sentry reports on several mertrics, and we're already sending 
      * {@link Member} data. But there are additional data that would be useful
-     * for debugging via the Sentry UI:
-     * 
-     * - framework version
+     * for debugging via the Sentry UI.
      * 
      * @return array
      * @todo
@@ -85,7 +101,12 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
     public function tags()
     {
         return [
-            'composer-info' => $this->composerInfo()
+            'Request-Method'=> $this->getReqMethod(),
+            'Request-Type'  => $this->requestType(),
+            'SAPI'          => php_sapi_name(),
+            'controller'    => $this->getController(),
+            'SS-version'    => $this->composerInfo('silverstripe/framework'),
+            'Peak-Memory'   => $this->getMem()
         ];
     }
     
@@ -111,17 +132,107 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
     }
     
     /**
-     * Return a formatted result of running the "composer info" command.
+     * Return a formatted result of running the "composer info" command over an
+     * optional $package.
      * 
+     * @param string $package
      * @return array
      */
-    protected function composerInfo()
+    protected function composerInfo($package)
     {
         $return = 0;
-        $result = passthru('cd ' . APP_DIR . ' && composer info', $return);
+        $cmd = sprintf('cd %s && composer info %s', BASE_PATH, $package);
+        $result = passthru($cmd, $return);
         
         if ($return === 0) {
             return var_export($result, true);
+        }
+        
+        return 'Unavailable';
+    }
+    
+    /** 
+     * Returns the name of the current controller.
+     * 
+     * @return string
+     */
+    protected function getController()
+    {
+        if($curr = @Controller::curr()) {
+            return $curr;
+        }
+        
+        return 'Unavailable';
+    }
+    
+    /**
+     * @return string
+     */
+    protected function getIP()
+    {
+        if ($controller = $this->getController()) {
+            return $controller->getRequest()->getIP();
+        }
+        
+        return 'Unavailable';
+    }
+    
+    /**
+     * What sort of request is this?
+     * 
+     * @return string
+     */
+    protected function requestType()
+    {
+        return Director::is_ajax() ? 'XMLHttpRequest' : 'Stabdard';
+    }
+    
+    /**
+     * Parse the User-Agent string to get O/S
+     * 
+     * @return string
+     * @todo
+     */
+    protected function getOS()
+    {
+        return 'Unavailable';
+    }
+    
+    /**
+     * Return peak memory usage.
+     * 
+     * @return float
+     */
+    protected function getMem()
+    {
+        $peak = memory_get_peak_usage(true) / 1024 / 1024;
+        
+        return round($peak, 2);
+    }
+    
+    /**
+     * Basic User-Agent check and return.
+     * 
+     * @return string
+     */
+    protected function getUserAgent()
+    {
+        if (!empty($ua = @$_SERVER['HTTP_USER_AGENT'])) {
+            return $ua;
+        }
+        
+        return 'Unavailable';
+    }
+    
+    /**
+     * Basic reuqest method check and return.
+     * 
+     * @return string
+     */
+    protected function getReqMethod()
+    {
+        if (!empty($method = @$_SERVER['REQUEST_METHOD'])) {
+            return $method;
         }
         
         return 'Unavailable';
