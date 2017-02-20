@@ -1,6 +1,6 @@
 <?php
 
-namespace \Sentry\Sentry;
+namespace SilverStripeSentry;
 
 require_once THIRDPARTY_PATH . '/Zend/Log/Writer/Abstract.php';
 
@@ -22,8 +22,12 @@ require_once THIRDPARTY_PATH . '/Zend/Log/Writer/Abstract.php';
  *  - Arbitrary additional "tags" as key=>value pairs, passed at call time
  */
 
-class SentryLogWriter extends Zend_Log_Writer_Abstract
+class SentryLogWriter extends \Zend_Log_Writer_Abstract
 {
+    
+    protected static $foo = false;
+
+
     /**
      * The constructor is usually called from factory().
      * 
@@ -32,22 +36,22 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
      *                      addition to that which is available by default in the
      *                      module and in Sentry itself.
      */
-    public function __construct($env = null, array $tags = [])
+    public function __construct($env = null, array $tags = null)
     {
         // Set default environment
         if (is_null($env)) {
-            $env = Director::get_environment_type();  
+            $env = \Director::get_environment_type();  
         }
         
         $this->client->setEnv($env);
         
         // Set all available user-data
-        if ($member = Member::currentUser()) {
+        if ($member = \Member::currentUser()) {
             $this->client->setUserData($this->user($member));
         }
         
         // Set any available tags available in SS config
-        if ($tags) {
+        if (!is_null($tags)) {
             $this->client->setTags(array_merge(
                 $this->tags(),
                 $tags
@@ -68,7 +72,7 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
         $env = isset($config['env']) ? $config['env'] : null;
         $tags = isset($config['tags']) ? $config['tags'] : null;
         
-		return Injector::inst()->create('SentryLogWriter', $env, $tags);
+		return \Injector::inst()->create('\SilverStripeSentry\SentryLogWriter', $env, $tags);
 	}
     
     /**
@@ -78,7 +82,7 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
      * @param Member $member
      * @return array
      */
-    public function user(Member $member)
+    public function user(\Member $member)
     {
         return [
             'ip_address'    => $this->getIP(),
@@ -126,7 +130,7 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
             'context'   => $event['message']['errcontext'], // From SS_Log::log()
             'tags'      => $this->client->getTags()
         ];
-        $trace = SS_Backtrace::filter_backtrace(debug_backtrace(), ['SentryLogWriter->_write']);
+        $trace = \SS_Backtrace::filter_backtrace(debug_backtrace(), ['SentryLogWriter->_write']);
         
         $this->client->send($message, [], $data, $trace);
     }
@@ -184,7 +188,7 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
      */
     protected function requestType()
     {
-        return Director::is_ajax() ? 'XMLHttpRequest' : 'Stabdard';
+        return \Director::is_ajax() ? 'XMLHttpRequest' : 'Stabdard';
     }
     
     /**
@@ -207,7 +211,7 @@ class SentryLogWriter extends Zend_Log_Writer_Abstract
     {
         $peak = memory_get_peak_usage(true) / 1024 / 1024;
         
-        return round($peak, 2);
+        return round($peak, 2) . 'Mb';
     }
     
     /**

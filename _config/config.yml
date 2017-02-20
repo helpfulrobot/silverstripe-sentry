@@ -1,12 +1,13 @@
-RavenClient:
-  # Installs all available PHP error handlers
-  # Untested when set to true
-  install: false
-
 Injector:
+  RavenClient:
+    class: SilverStripeSentry\Adaptors\RavenClient
+    # Installs all available PHP error handlers
+    # Untested when set to true
+    install: false
   SentryClient:
     class: RavenClient
+  SentryLogWriter:
+    class: SilverStripeSentry\SentryLogWriter
+    dependencies:
+      client: %$SentryClient
 
-Sentry:
-  dependencies:
-    client: '%$SentryClient'

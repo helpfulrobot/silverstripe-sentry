@@ -1,6 +1,6 @@
 <?php
 
-namespace \Sentry\Adaptors\ClientAdaptor;
+namespace SilverStripeSentry\Adaptors;
 
 /**
  * Adaptor base class.

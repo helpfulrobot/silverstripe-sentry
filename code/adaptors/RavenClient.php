@@ -1,8 +1,8 @@
 <?php
 
-namespace Sentry\Adaptors\RavenClient;
+namespace SilverStripeSentry\Adaptors;
 
-use \Sentry\Adaptors\ClientAdaptor;
+use SilverStripeSentry\Adaptors\ClientAdaptor;
 
 /**
  * The Sentry class simply acts as a bridge between the Raven PHP SDK and
